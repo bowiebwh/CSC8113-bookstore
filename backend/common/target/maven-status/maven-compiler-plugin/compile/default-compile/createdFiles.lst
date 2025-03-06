@@ -1,0 +1,5 @@
+com\example\common\repository\OrderRepository.class
+com\example\common\model\Book.class
+com\example\common\model\Order.class
+com\example\common\repository\BookRepository.class
+com\example\common\model\CartItem.class
