@@ -9,27 +9,31 @@ function Cart() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get(`${process.env.REACT_APP_CART_SERVICE_URL}/api/cart`)
-            .then(response => {
-                setCartItems(response.data);
+        const sessionId = localStorage.getItem("sessionId");
+        
+        axios.get(`${process.env.REACT_APP_CART_SERVICE_URL}/api/cart`, {
+            params: {sessionId}
+        })
+        .then(response => {
+            setCartItems(response.data);
 
-                const bookIds = response.data.map(item => item.bookId);
-                return axios.get(`${process.env.REACT_APP_CATALOG_SERVICE_URL}/api/books`);
-            })
-            .then(response => {
-                const bookMap = {};
-                response.data.forEach(book => {
-                    bookMap[book.id] = {
-                        title : book.title,
-                        imageUrl : book.imageUrl
-                    };
-                });
-                setBooks(bookMap);
-            })
-            .catch(error => {
-                console.error("get cart data failed:", error);
-                toast.error("Failed to load cart data");
+            const bookIds = response.data.map(item => item.bookId);
+            return axios.get(`${process.env.REACT_APP_CATALOG_SERVICE_URL}/api/books`);
+        })
+        .then(response => {
+            const bookMap = {};
+            response.data.forEach(book => {
+                bookMap[book.id] = {
+                    title : book.title,
+                    imageUrl : book.imageUrl
+                };
             });
+            setBooks(bookMap);
+        })
+        .catch(error => {
+            console.error("get cart data failed:", error);
+            toast.error("Failed to load cart data");
+        });
     }, []);
 
     const removeFromCart = (id) => {
@@ -48,7 +52,7 @@ function Cart() {
             .then(response => {
                 if (response.status === 200) {
                     toast.success("✅" + response.data);
-                    setCartItems([]); // ✅ 清空购物车
+                    setCartItems([]); // ✅ clear the cart
                     setTimeout(() => navigate("/"),1000);
                 } else {
                     toast.error("❌ Checkout failed: Unexpected response");

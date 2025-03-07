@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")  // 避免使用 "order" 这个SQL关键字
+@Table(name = "orders")  // avoid using "order" this SQL keyword
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

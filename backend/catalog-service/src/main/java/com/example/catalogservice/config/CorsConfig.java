@@ -12,16 +12,16 @@ import java.util.Arrays;
 public class CorsConfig {
 
     @Value("${cors.allowed-origins}")
-    private String[] allowedOrigins;  // 读取 application.properties 配置
+    private String[] allowedOrigins;  // read application.properties config
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
-        System.out.println("CORS Allowed Origins: " + Arrays.toString(allowedOrigins));  // 检查值
+        System.out.println("CORS Allowed Origins: " + Arrays.toString(allowedOrigins));
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")  // 允许所有路径
-                        .allowedOrigins(allowedOrigins)  // 允许的前端域
+                registry.addMapping("/**")  // allow all paths
+                        .allowedOrigins(allowedOrigins)
                         .allowedMethods("GET", "POST", "PUT", "DELETE")
                         .allowedHeaders("*");
             }

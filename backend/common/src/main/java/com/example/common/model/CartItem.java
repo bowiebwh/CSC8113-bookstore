@@ -13,9 +13,9 @@ public class CartItem {
 
     private Long bookId;
     private Integer quantity;
-
+    private String sessionId;
+    
     // Getters & Setters
-
     public Long getId() {
         return id;
     }
@@ -38,5 +38,13 @@ public class CartItem {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 }

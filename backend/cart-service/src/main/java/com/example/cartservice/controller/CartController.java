@@ -6,8 +6,10 @@ import com.example.common.model.CartItem;
 import com.example.common.model.Order;
 import com.example.common.repository.BookRepository;
 import com.example.common.repository.OrderRepository;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.DecimalFormat;
@@ -29,19 +31,21 @@ public class CartController {
     private OrderRepository orderRepository;
 
     /**
-     * 获取购物车内容
+     * get cart's books
      */
     @GetMapping
-    public List<CartItem> getCart() {
-        return cartItemRepository.findAll();
+    public List<CartItem> getCart(@RequestParam String sessionId) {
+        System.out.println("getCart sessionId------------" + sessionId);
+        return cartItemRepository.findBySessionId(sessionId);
     }
 
     /**
-     * 添加书籍到购物车
+     * add book to cart
      */
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping("/add")
     public ResponseEntity<?> addToCart(@RequestBody CartItem newItem) {
-        // 查找书籍
+        System.out.println("addCart sessionId------------" + newItem.getSessionId());
         Optional<Book> optionalBook = bookRepository.findById(newItem.getBookId());
 
         if (optionalBook.isEmpty()) {
@@ -49,8 +53,8 @@ public class CartController {
         }
 
         Book book = optionalBook.get();
-        
-        Optional<CartItem> existingCartItem = cartItemRepository.findByBookId(book.getId());
+
+        Optional<CartItem> existingCartItem = cartItemRepository.findBySessionIdAndBookId(newItem.getSessionId(), book.getId());
 
         if (existingCartItem.isPresent()) {
             CartItem cartItem = existingCartItem.get();
@@ -58,7 +62,7 @@ public class CartController {
             cartItemRepository.save(cartItem);
             return ResponseEntity.ok("cart has already update，" + book.getTitle() + " quantity +1");
         } else {
-            // **如果购物车中没有该书，创建新条目**
+            // **store book to the cart**
             newItem.setQuantity(1);
             cartItemRepository.save(newItem);
             return ResponseEntity.ok("Book " + book.getTitle() + " has already add to cart");
@@ -67,7 +71,7 @@ public class CartController {
 
 
     /**
-     * 更新购物车中的书籍数量
+     * update the quantity of books in the cart
      */
     @PutMapping("/{id}")
     public CartItem updateCartItem(@PathVariable Long id, @RequestBody CartItem updatedItem) {
@@ -85,7 +89,7 @@ public class CartController {
     }
 
     /**
-     * 删除购物车中的书籍
+     * delete books in the cart
      */
     @DeleteMapping("/{id}")
     public void removeFromCart(@PathVariable Long id) {
@@ -93,19 +97,20 @@ public class CartController {
     }
 
     /**
-     * 清空购物车
+     * clear the cart
      */
     @DeleteMapping
     public void clearCart() {
         cartItemRepository.deleteAll();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping("/checkout")
     public ResponseEntity<String> checkout() {
         List<CartItem> cartItems = cartItemRepository.findAll();
 
         if (cartItems.isEmpty()) {
-            return ResponseEntity.badRequest().body("购物车为空，无法结算");
+            return ResponseEntity.badRequest().body("cart is empty，can't checkout");
         }
 
         double totalPrice = 0.0;
@@ -113,7 +118,7 @@ public class CartController {
         List<Long> bookIds = new ArrayList<>();
         List<Integer> quantities = new ArrayList<>();
 
-        // 检查库存
+        // check the stock
         for (CartItem item : cartItems) {
             bookIds.add(item.getBookId());
             quantities.add(item.getQuantity());
@@ -121,33 +126,33 @@ public class CartController {
             Optional<Book> bookOpt = bookRepository.findById(item.getBookId());
 
             if (bookOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body("书籍ID " + item.getBookId() + " 不存在");
+                return ResponseEntity.badRequest().body("Book ID " + item.getBookId() + " doesn't exist");
             }
 
             Book book = bookOpt.get();
             if (book.getStock() < item.getQuantity()) {
-                return ResponseEntity.badRequest().body("书籍 " + book.getTitle() + " 库存不足");
+                return ResponseEntity.badRequest().body("Book " + book.getTitle() + " out of stock");
             }
 
-            // 计算总价
+            // calculate the total price
             totalPrice += book.getPrice() * item.getQuantity();
         }
 
-        // 扣减库存
+        // minus stock
         for (CartItem item : cartItems) {
             Book book = bookRepository.findById(item.getBookId()).get();
             book.setStock(book.getStock() - item.getQuantity());
             bookRepository.save(book);
         }
 
-        // 创建订单
+        // create order
         Order order = new Order();
         order.setBookIds(bookIds);
         order.setQuantities(quantities);
         order.setTotalPrice(totalPrice);
         orderRepository.save(order);
 
-        // 清空购物车
+        // clear the cart
         cartItemRepository.deleteAll();
 
         DecimalFormat df = new DecimalFormat("#.00");
@@ -155,5 +160,4 @@ public class CartController {
 
         return ResponseEntity.ok("Checkout successful，total price: $" + totalPrice);
     }
-
 }

@@ -23,7 +23,7 @@ function BookList() {
             });
     }, []);
 
-    const [addedToCart, setAddedToCart] = useState({}); // 记录已添加的书籍 ID
+    const [addedToCart, setAddedToCart] = useState({}); // record added book's id
 
     const addToCart = (bookId) => {
         if (stockMap[bookId] === 0) {
@@ -31,12 +31,16 @@ function BookList() {
             return;
         }
 
-        axios.post(`${process.env.REACT_APP_CART_SERVICE_URL}/api/cart/add`, { bookId, quantity: 1 })
-            .then(() => {
-                setAddedToCart(prev => ({ ...prev, [bookId]: true })); // 记录已添加状态
-                toast.success("✅ Book added to cart!", { position: "top-right", autoClose: 2000 });
-            })
-            .catch(error => toast.error("❌ Add failed: " + error.response?.data || "Unknown error", { position: "top-right", autoClose: 3000 }));
+        const sessionId = localStorage.getItem("sessionId");
+
+        axios.post(`${process.env.REACT_APP_CART_SERVICE_URL}/api/cart/add`, 
+            { bookId, quantity: 1, sessionId: sessionId }
+        )
+        .then(() => {
+            setAddedToCart(prev => ({ ...prev, [bookId]: true })); // record added status
+            toast.success("✅ Book added to cart!", { position: "top-right", autoClose: 2000 });
+        })
+        .catch(error => toast.error("❌ Add failed: " + error.response?.data || "Unknown error", { position: "top-right", autoClose: 3000 }));
     };
 
     return (
