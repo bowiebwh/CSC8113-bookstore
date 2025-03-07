@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication
 @EntityScan(basePackages = {
         "com.example.cartservice.model",   // let Spring Boot find CartItem
-        "com.example.common.model"        // let Spring Boot find Book 实体类
+        "com.example.common.model"        // let Spring Boot find Book
 })
 @EnableJpaRepositories(basePackages = {
         "com.example.cartservice.repository",  // let Spring Boot find CartItemRepository
